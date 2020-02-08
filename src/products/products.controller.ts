@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Param, NotFoundException, Body, UsePipes, BadRequestException, Query } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, NotFoundException, Body, Query } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { ProductDto , Product } from './dtos/productDto';
 import { ArrayValidationPipe, QueryArrayValidationPipe } from 'src/validation.pipe';

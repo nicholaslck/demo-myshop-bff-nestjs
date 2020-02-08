@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as AWS from 'aws-sdk';
-import { GetItemInput, ScanInput, PutItemInput, DeleteItemInput, BatchWriteItemInput, DeleteRequest, WriteRequest } from 'aws-sdk/clients/dynamodb';
+import { GetItemInput, ScanInput, PutItemInput, DeleteItemInput, BatchWriteItemInput, WriteRequest } from 'aws-sdk/clients/dynamodb';
 import { ProductDto , Product } from './dtos/productDto';
 import uuid = require('uuid');
 
@@ -81,7 +81,7 @@ export class ProductsService {
 			return dto
 		})
 
-		const putRequests = productDtos.map((productDto) => {
+		const requests: WriteRequest[] = productDtos.map((productDto) => {
 			return {
 				PutRequest : {
 					Item: AWS.DynamoDB.Converter.marshall(productDto)
@@ -89,7 +89,7 @@ export class ProductsService {
 			}
 		})
 		
-		const str = ['{"', this.tableName(), '":', JSON.stringify(putRequests), "}"].join("")
+		const str = ['{"', this.tableName(), '":', JSON.stringify(requests), "}"].join("")
 
 		const param : BatchWriteItemInput = {
 			RequestItems: JSON.parse(str)
@@ -103,16 +103,15 @@ export class ProductsService {
 
 	public async updateProducts(productDtos: Array<ProductDto>) {
 
-		const putRequests = productDtos.map((productDto) => {
+		const requests: WriteRequest[] = productDtos.map((productDto) => {
 			return {
 				PutRequest : {
 					Item: AWS.DynamoDB.Converter.marshall(productDto),
-					ConditionExpression: "attribute_exists(id)"
 				}
 			}
 		})
 		
-		const str = ['{"', this.tableName(), '":', JSON.stringify(putRequests), "}"].join("")
+		const str = ['{"', this.tableName(), '":', JSON.stringify(requests), "}"].join("")
 
 		const param : BatchWriteItemInput = {
 			RequestItems: JSON.parse(str)
