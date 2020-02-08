@@ -1,6 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as AWS from 'aws-sdk';
+import { GetItemInput, ScanInput, PutItemInput } from 'aws-sdk/clients/dynamodb';
+import { ProductDto } from './dtos/productDto';
 
 @Injectable()
 export class ProductsService {
@@ -24,7 +26,7 @@ export class ProductsService {
 
 		const ddb = this.ddb()
 
-		const param = {
+		const param : ScanInput = {
 			TableName: this.tableName()
 		}
 		const result = await ddb.scan(param).promise()
@@ -38,7 +40,7 @@ export class ProductsService {
 
 		const ddb = this.ddb()
 
-		const param = {
+		const param: GetItemInput = {
 			TableName: this.tableName(),
 			Key: AWS.DynamoDB.Converter.marshall({id: pid})
 		}
@@ -51,6 +53,24 @@ export class ProductsService {
 		else {
 			return AWS.DynamoDB.Converter.unmarshall(result.Item)
 		}
+	}
+
+	public async writeProductById(pid: string, product: ProductDto, isNewCreate: boolean) {
+
+		product.id = pid
+
+		const ddb = this.ddb()
+		const param : PutItemInput = {
+			TableName: this.tableName(),
+			Item: AWS.DynamoDB.Converter.marshall(product)
+		}
+
+		if (isNewCreate) {
+			param.ConditionExpression = "attribute_exists(id)"
+		}
+		
+		await ddb.putItem(param).promise()
+		return product
 	}
 
 

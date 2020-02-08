@@ -1,5 +1,7 @@
-import { Controller, Get, Post, Put, Delete, Param, NotFoundException } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, NotFoundException, Body } from '@nestjs/common';
 import { ProductsService } from './products.service';
+import { ProductDto } from './dtos/productDto';
+import { AWSError } from 'aws-sdk';
 
 @Controller('products')
 export class ProductsController {
@@ -38,9 +40,19 @@ export class ProductsController {
 	}
 
 	@Put(":pid")
-	public putProductById(@Param() params) {
+	public async putProductById(@Param() params, @Body() body: ProductDto) {
 		const pid = params.pid
-		return "Put Product id: " + pid
+		try {
+			return await this.productsService.writeProductById(pid, body, false)
+		}
+		catch (e) {
+			if (e.code) {
+				if ( e.code === 'ConditionalCheckFailedException') {
+					throw new NotFoundException()
+				}
+			}
+			throw e
+		}
 	}
 
 	@Delete(":pid")
