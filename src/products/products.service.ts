@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as AWS from 'aws-sdk';
-import { GetItemInput, ScanInput, PutItemInput, DeleteItemInput } from 'aws-sdk/clients/dynamodb';
-import { ProductDto } from './dtos/productDto';
+import { GetItemInput, ScanInput, PutItemInput, DeleteItemInput, BatchWriteItemInput, DeleteRequest, WriteRequest } from 'aws-sdk/clients/dynamodb';
+import { ProductDto , Product } from './dtos/productDto';
+import uuid = require('uuid');
 
 @Injectable()
 export class ProductsService {
@@ -50,24 +51,114 @@ export class ProductsService {
 		if (!result.Item) {
 			return null
 		}
-		else {
-			return AWS.DynamoDB.Converter.unmarshall(result.Item)
-		}
+		return AWS.DynamoDB.Converter.unmarshall(result.Item)
 	}
 
-	public async writeProductById(pid: string, product: ProductDto) {
-
-		product.id = pid
+	public async createProduct(product: Product) {
+		const productDto: ProductDto = {
+			...product,
+			id: uuid()
+		}
 
 		const ddb = this.ddb()
 		const param : PutItemInput = {
 			TableName: this.tableName(),
-			Item: AWS.DynamoDB.Converter.marshall(product),
+			Item: AWS.DynamoDB.Converter.marshall(productDto),
+			ConditionExpression: "attribute_not_exists(id)"
+		}
+		
+		await ddb.putItem(param).promise()
+		return productDto
+	}
+
+	public async createProducts(productList: Array<Product>) {
+		
+		const productDtos = productList.map((product) => {
+			const dto: ProductDto = {
+				...product,
+				id: uuid()
+			}
+			return dto
+		})
+
+		const putRequests = productDtos.map((productDto) => {
+			return {
+				PutRequest : {
+					Item: AWS.DynamoDB.Converter.marshall(productDto)
+				}
+			}
+		})
+		
+		const str = ['{"', this.tableName(), '":', JSON.stringify(putRequests), "}"].join("")
+
+		const param : BatchWriteItemInput = {
+			RequestItems: JSON.parse(str)
+		}
+
+		const ddb = this.ddb()
+		await ddb.batchWriteItem(param).promise()
+
+		return productDtos
+	}
+
+	public async updateProducts(productDtos: Array<ProductDto>) {
+
+		const putRequests = productDtos.map((productDto) => {
+			return {
+				PutRequest : {
+					Item: AWS.DynamoDB.Converter.marshall(productDto),
+					ConditionExpression: "attribute_exists(id)"
+				}
+			}
+		})
+		
+		const str = ['{"', this.tableName(), '":', JSON.stringify(putRequests), "}"].join("")
+
+		const param : BatchWriteItemInput = {
+			RequestItems: JSON.parse(str)
+		}
+
+		const ddb = this.ddb()
+		await ddb.batchWriteItem(param).promise()
+
+		return productDtos
+	}
+
+	public async updateProductById(pid: string, product: Product) {
+
+		const productDto: ProductDto = {
+			...product, 
+			id: pid
+		}
+
+		const ddb = this.ddb()
+		const param : PutItemInput = {
+			TableName: this.tableName(),
+			Item: AWS.DynamoDB.Converter.marshall(productDto),
 			ConditionExpression: "attribute_exists(id)"
 		}
 		
 		await ddb.putItem(param).promise()
-		return product
+		return productDto
+	}
+
+	public async deleteProducts(pidList: Array<string>) {
+		const requests : WriteRequest[] = pidList.map((pid) => {
+			return {
+				DeleteRequest : {
+					Key: AWS.DynamoDB.Converter.marshall({id: pid})
+				}
+			}
+		})
+		
+		const str = ['{"', this.tableName(), '":', JSON.stringify(requests), "}"].join("")
+
+		const param : BatchWriteItemInput = {
+			RequestItems: JSON.parse(str)
+		}
+
+		const ddb = this.ddb()
+		await ddb.batchWriteItem(param).promise()
 	}
 
 	public async deleteProductById(pid: string) {
@@ -79,6 +170,6 @@ export class ProductsService {
 			Key: AWS.DynamoDB.Converter.marshall({id: pid})
 		}
 
-		ddb.deleteItem(param).promise()
+		await ddb.deleteItem(param).promise()
 	}
 }

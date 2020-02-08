@@ -1,9 +1,6 @@
-import { IsNotEmpty, IsUppercase, IsUrl, IsOptional } from 'class-validator' 
+import { IsNotEmpty, IsUrl, IsOptional } from 'class-validator' 
 
-export class ProductDto {
-	
-	@IsNotEmpty()
-	public id: string
+export class Product {
 
 	@IsNotEmpty()
 	public name: string
@@ -11,4 +8,10 @@ export class ProductDto {
 	@IsOptional()
 	@IsUrl()
 	public imageUrl: string
+}
+
+export class ProductDto extends Product {
+	
+	@IsNotEmpty()
+	public id: string
 }

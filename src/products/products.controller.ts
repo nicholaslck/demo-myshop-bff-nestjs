@@ -1,7 +1,7 @@
-import { Controller, Get, Post, Put, Delete, Param, NotFoundException, Body } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, NotFoundException, Body, UsePipes, BadRequestException, Query } from '@nestjs/common';
 import { ProductsService } from './products.service';
-import { ProductDto } from './dtos/productDto';
-import { AWSError } from 'aws-sdk';
+import { ProductDto , Product } from './dtos/productDto';
+import { ArrayValidationPipe, QueryArrayValidationPipe } from 'src/validation.pipe';
 
 @Controller('products')
 export class ProductsController {
@@ -10,29 +10,27 @@ export class ProductsController {
 
 	@Get()
 	public async getProductList() {
-		const result = await this.productsService.readProducts()
-		return result
+		return await this.productsService.readProducts()
 	}
 
 	@Post()
-	public postProductList() {
-		return "Post Products"
+	public async postProductList(@Body(new ArrayValidationPipe(Product)) body: Array<Product>) {
+		return await this.productsService.createProducts(body)
 	}
 
 	@Put()
-	public putProductList() {
-		return "Put Products"
+	public async putProductList(@Body(new ArrayValidationPipe(ProductDto)) body: Array<ProductDto>) {
+		return this.productsService.updateProducts(body)
 	}
 
 	@Delete()
-	public deleteProductList() {
-		return "Delete Products"
+	public async deleteProductList(@Query("ids", new QueryArrayValidationPipe(String)) query: Array<string>) {
+		return await this.productsService.deleteProducts(query)
 	}
 
 	@Get(":pid")
 	public async getProductById(@Param() params) {
-		const pid = params.pid as string
-		const product = await this.productsService.readProductsById(pid)
+		const product = await this.productsService.readProductsById(params.pid as string)
 		if (!product) {
 			throw new NotFoundException()
 		}
@@ -40,10 +38,9 @@ export class ProductsController {
 	}
 
 	@Put(":pid")
-	public async putProductById(@Param() params, @Body() body: ProductDto) {
-		const pid = params.pid
+	public async putProductById(@Param() params, @Body() body: Product) {
 		try {
-			return await this.productsService.writeProductById(pid, body)
+			return await this.productsService.updateProductById(params.pid as string, body)
 		}
 		catch (e) {
 			if (e.code) {
@@ -57,8 +54,6 @@ export class ProductsController {
 
 	@Delete(":pid")
 	public async deleteProductById(@Param() params) {
-		const pid = params.pid
-		await this.productsService.deleteProductById(pid)
+		await this.productsService.deleteProductById(params.pid)
 	}
-
 }
