@@ -7,8 +7,10 @@ export class ProductsController {
 	constructor(private readonly productsService: ProductsService) {}
 
 	@Get()
-	public getProductList() {
-		return this.productsService.readProducts()
+	public async getProductList() {
+
+		const result = await this.productsService.readProducts()
+		return result
 	}
 
 	@Post()
