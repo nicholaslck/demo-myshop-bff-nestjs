@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as AWS from 'aws-sdk';
-import { GetItemInput, ScanInput, PutItemInput } from 'aws-sdk/clients/dynamodb';
+import { GetItemInput, ScanInput, PutItemInput, DeleteItemInput } from 'aws-sdk/clients/dynamodb';
 import { ProductDto } from './dtos/productDto';
 
 @Injectable()
@@ -55,25 +55,30 @@ export class ProductsService {
 		}
 	}
 
-	public async writeProductById(pid: string, product: ProductDto, isNewCreate: boolean) {
+	public async writeProductById(pid: string, product: ProductDto) {
 
 		product.id = pid
 
 		const ddb = this.ddb()
 		const param : PutItemInput = {
 			TableName: this.tableName(),
-			Item: AWS.DynamoDB.Converter.marshall(product)
-		}
-
-		if (isNewCreate) {
-			param.ConditionExpression = "attribute_exists(id)"
+			Item: AWS.DynamoDB.Converter.marshall(product),
+			ConditionExpression: "attribute_exists(id)"
 		}
 		
 		await ddb.putItem(param).promise()
 		return product
 	}
 
+	public async deleteProductById(pid: string) {
 
+		const ddb = this.ddb()
 
+		const param: DeleteItemInput = {
+			TableName: this.tableName(),
+			Key: AWS.DynamoDB.Converter.marshall({id: pid})
+		}
 
+		ddb.deleteItem(param).promise()
+	}
 }

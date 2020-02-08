@@ -43,7 +43,7 @@ export class ProductsController {
 	public async putProductById(@Param() params, @Body() body: ProductDto) {
 		const pid = params.pid
 		try {
-			return await this.productsService.writeProductById(pid, body, false)
+			return await this.productsService.writeProductById(pid, body)
 		}
 		catch (e) {
 			if (e.code) {
@@ -56,9 +56,9 @@ export class ProductsController {
 	}
 
 	@Delete(":pid")
-	public deleteProductById(@Param() params) {
+	public async deleteProductById(@Param() params) {
 		const pid = params.pid
-		return "Delete Product id: " + pid
+		await this.productsService.deleteProductById(pid)
 	}
 
 }
