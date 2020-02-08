@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Param } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, NotFoundException } from '@nestjs/common';
 import { ProductsService } from './products.service';
 
 @Controller('products')
@@ -8,7 +8,6 @@ export class ProductsController {
 
 	@Get()
 	public async getProductList() {
-
 		const result = await this.productsService.readProducts()
 		return result
 	}
@@ -29,9 +28,13 @@ export class ProductsController {
 	}
 
 	@Get(":pid")
-	public getProductById(@Param() params) {
-		const pid = params.pid
-		return "Get Product id: " + pid
+	public async getProductById(@Param() params) {
+		const pid = params.pid as string
+		const product = await this.productsService.readProductsById(pid)
+		if (!product) {
+			throw new NotFoundException()
+		}
+		return product
 	}
 
 	@Put(":pid")

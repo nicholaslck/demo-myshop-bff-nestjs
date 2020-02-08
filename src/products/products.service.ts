@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as AWS from 'aws-sdk';
 
@@ -16,20 +16,41 @@ export class ProductsService {
 		})
 	}
 
+	private tableName() {
+		return this.configService.get<string>("DDB_PRODUCTS_TABLE_NAME")
+	}
+
 	public async readProducts() {
 
 		const ddb = this.ddb()
 
 		const param = {
-			TableName: 'Demo-MyShop-Products'
+			TableName: this.tableName()
 		}
-
 		const result = await ddb.scan(param).promise()
 		const parsed = result.Items.map((item) => {
 			return AWS.DynamoDB.Converter.unmarshall(item)
 		})
-	
 		return parsed
+	}
+
+	public async readProductsById(pid: string) {
+
+		const ddb = this.ddb()
+
+		const param = {
+			TableName: this.tableName(),
+			Key: AWS.DynamoDB.Converter.marshall({id: pid})
+		}
+		
+		const result = await ddb.getItem(param).promise()
+
+		if (!result.Item) {
+			return null
+		}
+		else {
+			return AWS.DynamoDB.Converter.unmarshall(result.Item)
+		}
 	}
 
 
