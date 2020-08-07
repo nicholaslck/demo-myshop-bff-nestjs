@@ -30,7 +30,7 @@
     "@nestjs/platform-express": "^6.10.14",
     "@types/uuid": "^3.4.7",
     "aws-sdk": "^2.614.0",
-    "class-transformer": "^0.2.3",
+    "class-transformer": "^0.3.1",
     "class-validator": "^0.11.0",
     "reflect-metadata": "^0.1.13",
     "rimraf": "^3.0.0",
