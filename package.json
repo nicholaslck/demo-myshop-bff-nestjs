@@ -27,7 +27,7 @@
     "@nestjs/common": "^6.10.14",
     "@nestjs/config": "^0.2.2",
     "@nestjs/core": "^6.10.14",
-    "@nestjs/platform-express": "^6.10.14",
+    "@nestjs/platform-express": "^9.2.1",
     "@types/uuid": "^3.4.7",
     "aws-sdk": "^2.614.0",
     "class-transformer": "^0.2.3",
